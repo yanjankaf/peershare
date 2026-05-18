@@ -4,7 +4,7 @@
 window.AppState = {
   // Socket connection
   connected: false,
-  signalingUrl: localStorage.getItem('signalingUrl') || 'http://localhost:3000',
+  signalingUrl: localStorage.getItem('signalingUrl') || 'https://peershare-gxd6.onrender.com',
 
   // Current role: null | 'sender' | 'receiver'
   role: null,

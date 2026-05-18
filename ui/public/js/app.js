@@ -6,7 +6,7 @@ function app() {
     settingsOpen:     false,
     modalOpen:        false,
     codeCopied:       false,
-    signalingUrl: localStorage.getItem('signalingUrl') || 'http://localhost:3000',
+    signalingUrl: localStorage.getItem('signalingUrl') || 'https://peershare-gxd6.onrender.com',
     theme : localStorage.getItem("theme") || "dark",
     selectedFile:     null,
     dragOver:         false,
