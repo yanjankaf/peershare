@@ -70,7 +70,13 @@
     <!-- Send tab -->
     <div x-show="activeTab === 'send'">
       <div class="panel">
-        <div class="panel-label">Select file to send</div>
+        <div class="receive-header">
+          <div class="receive-icon">↑</div>
+          <div>
+            <div class="receive-title">Send Files</div>
+            <div class="receive-sub">Give this 6-character code to the receiver</div>
+          </div>
+        </div>
 
         <div class="drop-zone" :class="{ 'drag-over': dragOver }"
              x-show="!selectedFile"
@@ -160,14 +166,6 @@
     </div>
 
     <!-- Info -->
-    <div style="margin-top:32px">
-      <div class="meta-grid">
-        <div class="meta-cell"><div class="meta-key">Protocol</div><div class="meta-val">WebRTC DataChannel</div></div>
-        <div class="meta-cell"><div class="meta-key">Server role</div><div class="meta-val">Signaling only</div></div>
-        <div class="meta-cell"><div class="meta-key">File routing</div><div class="meta-val">Peer-to-peer direct</div></div>
-        <div class="meta-cell"><div class="meta-key">Persistence</div><div class="meta-val">None — ephemeral</div></div>
-      </div>
-    </div>
 
   </main>
 
