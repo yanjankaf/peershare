@@ -70,13 +70,7 @@
     <!-- Send tab -->
     <div x-show="activeTab === 'send'">
       <div class="panel">
-        <div class="receive-header">
-          <div class="receive-icon">↑</div>
-        <div>
-        <div class="receive-title">Send a file</div>
-        <div class="receive-sub">Choose a file and generate a transfer code</div>
-        </div>
-        </div>
+        <div class="panel-label">Select file to send</div>
 
         <div class="drop-zone" :class="{ 'drag-over': dragOver }"
              x-show="!selectedFile"
@@ -168,8 +162,10 @@
     <!-- Info -->
     <div style="margin-top:32px">
       <div class="meta-grid">
-        <div class="meta-cell"><div class="meta-key">Developed by</div><div class="meta-val">Yanjanendra Kafaltiya</div></div>
-        <div class="meta-cell"><div class="meta-key">Submitted to</div><div class="meta-val">Amrapali University</div></div>
+        <div class="meta-cell"><div class="meta-key">Protocol</div><div class="meta-val">WebRTC DataChannel</div></div>
+        <div class="meta-cell"><div class="meta-key">Server role</div><div class="meta-val">Signaling only</div></div>
+        <div class="meta-cell"><div class="meta-key">File routing</div><div class="meta-val">Peer-to-peer direct</div></div>
+        <div class="meta-cell"><div class="meta-key">Persistence</div><div class="meta-val">None — ephemeral</div></div>
       </div>
     </div>
 
@@ -226,7 +222,7 @@
     <div class="transfer-modal" @click.stop>
 
       <div class="transfer-modal-header">
-        <div class="transfer-modal-title" x-text="role === 'sender' ? '↑ Sending File' : '↓ Receiving File'"></div>
+        <div class="transfer-modal-title" x-text="transferDone ? (role === 'sender' ? '✓ File Sent' : '✓ File Received') : (role === 'sender' ? '↑ Sending File' : '↓ Receiving File')"></div>
         <button class="btn-icon" @click="closeModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -315,24 +311,52 @@
           <div>
             <div class="success-box">
               <div class="success-icon">↓</div>
-              <div class="success-text">File received</div>
+              <div class="success-text">File received successfully</div>
             </div>
-            <button class="btn btn-primary btn-full mt-3" @click="downloadFile()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              <span x-text="'Download ' + (fileMeta ? fileMeta.name : 'File')"></span>
-            </button>
           </div>
         </template>
 
       </div>
 
       <div class="transfer-modal-footer">
-        <button class="btn btn-danger" @click="closeModal()"
-                x-text="transferDone ? 'Close' : 'Cancel Transfer'"></button>
+
+        <!-- Done: receiver gets Download + Close, sender just Close -->
+        <template x-if="transferDone && role === 'receiver'">
+          <div style="display:flex;gap:10px;width:100%">
+            <button class="btn btn-outline" style="flex:1" @click="closeModal()">
+              Close
+            </button>
+            <button class="btn btn-primary" style="flex:2" @click="downloadFile()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span x-text="'Save ' + (fileMeta ? fileMeta.name : 'File')"></span>
+            </button>
+          </div>
+        </template>
+
+        <template x-if="transferDone && role === 'sender'">
+          <button class="btn btn-primary btn-full" @click="closeModal()">
+            Close
+          </button>
+        </template>
+
+        <!-- Error state -->
+        <template x-if="transferError">
+          <button class="btn btn-outline btn-full" @click="closeModal()">
+            Close
+          </button>
+        </template>
+
+        <!-- Active: cancel -->
+        <template x-if="!transferDone && !transferError">
+          <button class="btn btn-danger btn-full" @click="closeModal()">
+            Cancel Transfer
+          </button>
+        </template>
+
       </div>
 
     </div>
