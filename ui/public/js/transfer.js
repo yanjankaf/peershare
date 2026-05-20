@@ -1,27 +1,24 @@
 window.TransferManager = (function () {
 
   var _code = null;
+  var _closing = false; // flag: we initiated the close, ignore peer_disconnected
 
-  // _app is window._app set by Alpine component's init()
   function ui(patch) {
     if (window._app) window._app.update(patch);
   }
 
   function init() {
-    // room created — sender gets the code
     document.addEventListener('room:created', function(e) {
       _code = e.detail.code;
       AppState.code = _code;
       ui({ code: _code, statusMessage: 'Share this code with the receiver.', transferState: 'waiting' });
     });
 
-    // both peers in room — kick off WebRTC
     document.addEventListener('room:peer_ready', async function(e) {
       var detail = e.detail;
       _code = detail.code;
       AppState.peerReady = true;
       ui({ statusMessage: 'Peer connected. Establishing connection...', transferState: 'connected' });
-
       try {
         if (AppState.role === 'sender') {
           await WebRTCManager.startAsSender(_code, AppState.selectedFile);
@@ -33,12 +30,10 @@ window.TransferManager = (function () {
       }
     });
 
-    // relay signal to WebRTC layer
     document.addEventListener('webrtc:signal', function(e) {
       WebRTCManager.handleSignal(e.detail.payload, _code);
     });
 
-    // transfer lifecycle
     document.addEventListener('transfer:start', function() {
       ui({ transferState: 'transferring', statusMessage: 'Transferring...' });
     });
@@ -56,6 +51,8 @@ window.TransferManager = (function () {
     });
 
     document.addEventListener('room:peer_disconnected', function(e) {
+      // ignore if we closed it ourselves, or transfer already done
+      if (_closing) return;
       if (AppState.transferState === 'done') return;
       var reason = e.detail.reason;
       if (reason === 'cancelled') {
@@ -66,15 +63,18 @@ window.TransferManager = (function () {
     });
 
     document.addEventListener('room:expired', function() {
+      if (_closing) return;
       handleError('Room expired — no one joined in time.');
     });
 
     document.addEventListener('room:error', function(e) {
+      if (_closing) return;
       handleError(e.detail.message);
     });
   }
 
   function startSend(file) {
+    _closing = false;
     AppState.role = 'sender';
     AppState.selectedFile = file;
     AppState.fileMeta = { name: file.name, size: file.size, type: file.type };
@@ -84,6 +84,7 @@ window.TransferManager = (function () {
   }
 
   function startReceive(code) {
+    _closing = false;
     code = code.toUpperCase().trim();
     AppState.role = 'receiver';
     AppState.code = code;
@@ -93,12 +94,15 @@ window.TransferManager = (function () {
   }
 
   function cancel() {
+    _closing = true; // suppress incoming peer_disconnected from our own cancel
     if (_code && AppState.transferState !== 'done') {
       SocketManager.emit('cancel_transfer', { code: _code });
     }
     WebRTCManager.close();
     AppState.reset();
     _code = null;
+    // reset flag after a tick so any in-flight socket events are ignored
+    setTimeout(function() { _closing = false; }, 500);
   }
 
   function handleError(msg) {

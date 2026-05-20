@@ -6,8 +6,8 @@ function app() {
     settingsOpen:     false,
     modalOpen:        false,
     codeCopied:       false,
-    signalingUrl: localStorage.getItem('signalingUrl') || 'https://peershare-gxd6.onrender.com',
-    theme : localStorage.getItem("theme") || "dark",
+    signalingUrl:     localStorage.getItem('signalingUrl') || 'https://peershare-gxd6.onrender.com',
+    theme :           localStorage.getItem("theme") || "dark",
     selectedFile:     null,
     dragOver:         false,
     receiveCode:      '',
@@ -41,7 +41,7 @@ function app() {
     },
 
     init() {
-      var saved = sessionStorage.getItem('signalingUrl');
+      var saved = localStorage.getItem('signalingUrl');
       if (saved) this.signalingUrl = saved;
 
       var savedTheme = localStorage.getItem('theme') || 'dark';
@@ -56,14 +56,14 @@ function app() {
       });
 
       TransferManager.init(this);
-      sessionStorage.setItem('signalingUrl', this.signalingUrl);
+      localStorage.setItem('signalingUrl', this.signalingUrl);
       AppState.signalingUrl = this.signalingUrl;
       SocketManager.connect(this.signalingUrl);
 
       setInterval(() => {
         var now = SocketManager.isConnected();
         if (this.connected !== now) this.connected = now;
-      }, 300);
+      }, 100);
     },
 
     // called by TransferManager directly with a patch object
@@ -237,7 +237,7 @@ function app() {
       if (!this.downloadUrl) return;
       var a = document.createElement('a');
       a.href     = this.downloadUrl;
-      a.download = (this.fileMeta && this.fileMeta.name) || 'download';
+      a.download = 'Download';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
