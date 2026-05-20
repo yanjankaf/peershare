@@ -1,7 +1,7 @@
 window.TransferManager = (function () {
 
   var _code = null;
-  var _closing = false; // flag: we initiated the close, ignore peer_disconnected
+  var _closing = false;
 
   function ui(patch) {
     if (window._app) window._app.update(patch);
@@ -51,15 +51,14 @@ window.TransferManager = (function () {
     });
 
     document.addEventListener('room:peer_disconnected', function(e) {
-      // ignore if we closed it ourselves, or transfer already done
+      // ignore if we closed ourselves or transfer is already done
       if (_closing) return;
       if (AppState.transferState === 'done') return;
+      if (window._app && window._app.transferState === 'done') return;
       var reason = e.detail.reason;
-      if (reason === 'cancelled') {
-        handleError('Transfer cancelled by the other peer.');
-      } else {
-        handleError('Peer disconnected.');
-      }
+      handleError(reason === 'cancelled'
+        ? 'Transfer was cancelled.'
+        : 'Peer disconnected.');
     });
 
     document.addEventListener('room:expired', function() {
@@ -94,14 +93,16 @@ window.TransferManager = (function () {
   }
 
   function cancel() {
-    _closing = true; // suppress incoming peer_disconnected from our own cancel
+    _closing = true;
     if (_code && AppState.transferState !== 'done') {
+      SocketManager.emit('cancel_transfer', { code: _code });
+    } else if (_code && AppState.transferState === 'done') {
+      // tell server to clean up silently — it won't broadcast peer_disconnected
       SocketManager.emit('cancel_transfer', { code: _code });
     }
     WebRTCManager.close();
     AppState.reset();
     _code = null;
-    // reset flag after a tick so any in-flight socket events are ignored
     setTimeout(function() { _closing = false; }, 500);
   }
 
